@@ -1,1 +1,1 @@
-web:node scripts/create_database.js && node server.js
+web:node server.js
