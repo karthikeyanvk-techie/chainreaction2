@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rohittir/chain-reaction.git"
+    "url": "git+https://github.com/karthikeyanvk-techie/chainreaction2.git"
   },
-  "author": "Rohit Tirmanwar, Rohitaksh",
+  "author": "Karthikeyan VK",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/rohittir/chain-reaction/issues"
+    "url": "https://github.com/karthikeyanvk-techie/chainreaction2/issues"
   },
-  "homepage": "https://github.com/rohittir/chain-reaction#readme",
+  "homepage": "https://github.com/karthikeyanvk-techie/chainreaction2#readme",
   "dependencies": {
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.13.1",
