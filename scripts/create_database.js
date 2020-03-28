@@ -18,7 +18,7 @@ connection.query("DROP TABLE " + dbconfig.database +".BOARD_PLAYERS");
 connection.query("DROP TABLE " + dbconfig.database +".BOARD");
 connection.query("DROP TABLE " + dbconfig.database +".users");
 */
-
+connection.query('USE ' + dbconfig.database);
 connection.query('\
 CREATE TABLE IF NOT EXISTS`' + dbconfig.database + '`.`users` ( \
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT, \
