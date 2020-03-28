@@ -21,7 +21,11 @@ var fs = require('fs');
 // DATABASE connection
 var mysql = require('mysql');
 var dbconfig = require('./config/database');
-var connection = mysql.createConnection(dbconfig.connection);
+var connection = mysql.createConnection({  
+  host: "us-cdbr-iron-east-01.cleardb.net",  
+  user: "bed48ed96f68fa",  
+  password: "400c3d76"  
+});
 // console.log(connection);
 
 connection.query('USE ' + dbconfig.database);
