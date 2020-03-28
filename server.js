@@ -23,8 +23,8 @@ var mysql = require('mysql');
 var dbconfig = require('./config/database');
 var connection = mysql.createConnection({  
   host: "us-cdbr-iron-east-01.cleardb.net",  
-  user: "bed48ed96f68fa",  
-  password: "400c3d76"  
+  user: "b4d87862840d1f",  
+  password: "61af38dd"  
 });
 // console.log(connection);
 
