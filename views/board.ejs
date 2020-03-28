@@ -1,0 +1,416 @@
+
+
+<!-- GAME TABLE -->
+
+<!doctype html>
+<html>
+<head>
+	<title>BOARD</title>
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<style>
+		body { padding-top:80px; word-wrap:break-word; }
+	</style>
+</head>
+<body>
+<div class="container">
+
+	<div class="row">
+		<div style="float: right">
+			<button class="btn btn-danger" type="button" onclick="forfeitGame()">Forfeit Game</button>
+			<a href="/profile" class="btn btn-info"><span class="glyphicon glyphicon-user"></span><span id="usernameId"><%= username %></span> </a>
+			<a href="/logout" class="btn btn-danger"><span class="glyphicon glyphicon-off"></span> Logout</a>
+		</div>
+		<button class="btn btn-primary" type="button" onclick="refreshBoard()">Refresh</button>
+	</div>
+
+
+
+	<div class="row" style="margin-top: 5%">
+		<div class="col-md-6">
+			<h2 id ="boardNameId"></h2>
+			<h4 id="activePlayersId"></h4>
+			<h4 id="boardStatusId"></h4>
+			<h4 id="myTurnID"></h4>
+			<h4 id="timerId"></h4>
+			<br>
+			<div>
+				<table class="table table-condensed">
+					<thead>
+					<tr>
+						<th>User</th>
+						<th>Cell Color</th>
+						<th>Points</th>
+						<th>Moves Left</th>
+						<th>Winner</th>
+					</tr>
+					</thead>
+					<tbody id="usersTableId">
+					</tbody>
+				</table>
+			</div>
+			<!-- <h4>Click on Start Button to start the game.</h4> -->
+			<button class="btn btn-primary" type="button" onclick="startGame()">Start The Game!</button>
+			<h4 style="background-color: red" id="errorMsgId"></h4>
+			<h4 style="background-color: Chartreuse" id="finishedGameId"></h4>
+		</div>
+	</div>
+
+	<div class="row" id="block-row" style="margin-top: 10%; padding-bottom: 50px">
+	</div>
+
+</div>
+</body>
+
+<script type="text/javascript">
+
+
+		var Timerinterval = null;
+		var bStatusTimer = null;
+		fetchCurrentGame();
+
+		function fetchCurrentGame() {
+
+			$.get("/board", {'request': 'currentPlayingGame'})
+				.done( function (data, status) {
+					console.log(data);
+					fillBoardWithData(data);
+					getCurrStatusOfBoard(data.boardName);
+
+					console.log(data);
+					var winner  = getWinner(data.userData);
+					if (winner) {
+						// the game has finished
+						var user = document.getElementById("usernameId").innerHTML;
+						var msg = "";
+						if (user == winner) {
+							msg = "Congratulations!! You won the game...";
+						} else {
+							msg = "Sorry you lost the game. The winner is " + winner +". Try next time..."
+						}
+						document.getElementById("finishedGameId").innerHTML = msg;
+						if (Timerinterval) {
+							clearInterval(Timerinterval);
+						}
+					}
+
+					// bStatusTimer = setInterval(function(){ getCurrStatusOfBoard(data.boardName) }, 5000);
+					$('#block-row').off('click');
+				})
+				.fail (function(data, status) {
+					console.log(data);
+					redirect("launch");
+				});
+		}
+
+		function getWinner(userData) {
+			for (var i = 0; i < userData.length; i++) {
+				if (userData[i].winner == true) {
+					return userData[i].userName;
+				}
+			}
+			return null;
+		}
+
+		function refreshBoard() {
+			fetchCurrentGame();
+			checkForTurn();
+		}
+
+		function fillBoardWithData(data) {
+			createTable(data.rows, data.cols);
+			setBoardName(data.boardName);
+			setNumActivePlayers(data.userData);
+			setUserListAndColors(data.userData);
+
+			for(var i = 0; i < data.rows; i++) {
+				for (var j = 0; j < data.cols; j++) {
+					var cellID = ""+(i+1)+""+(j+1);
+					var userIndex = getCellIdUserIndex(cellID, data.boardData);
+					var userColor = getUserColor(userIndex, data.userData);
+					var cellText = getCellIdText(cellID, data.boardData);
+
+					setCellOwnerAndText(cellID, userColor, cellText);
+				}
+			}
+		}
+
+		function setBoardName(name) {
+			var domElement = document.getElementById("boardNameId");
+			if (domElement) {
+				domElement.innerHTML = name;
+			}
+		}
+
+		function setNumActivePlayers(userData) {
+			var domElement = document.getElementById("activePlayersId");
+			if (domElement) {
+				domElement.innerHTML = 'Players Count: ' + userData.length;
+			}
+		}
+
+		function getCurrStatusOfBoard(boardName) {
+			console.log(boardName);
+			$.get("/board", {'request': 'boardStatus', 'boardName': boardName})
+				.done( function (data) {
+					if (data == 'WAITING') {
+						setBoardStatus("Waiting for more players to join. You can start the game if at least 2 players have joined.");
+						setTimeout(fetchCurrentGame, 2000);
+					} else if (data == "ACTIVE") {
+						setBoardStatus("Game started and in progress...");
+						// clearInterval(bStatusTimer);
+					} else if (data == "COMPLETED") {
+						setBoardStatus("Game finished...");
+					}
+
+				})
+				.fail (function (error) {
+					// showErrorMessage(error);
+					console.log("Some error on server");
+				});
+		}
+
+		function setBoardStatus(status) {
+			var domElm = document.getElementById("boardStatusId");
+			if (domElm) {
+				domElm.innerHTML = status;
+			}
+		}
+
+		function startGame() {
+			$.get("/board", {'request': 'startGame'})
+				.done( function (data) {
+					if (data) {
+						console.log(data);
+						$('#block-row').on('click');
+						checkForTurn();
+					}
+				})
+				.fail (function (error) {
+					showErrorMessage(error);
+					console.log("Some error on server");
+				});
+		}
+
+		function showErrorMessage(error) {
+			var msg = error.responseText;
+			var domElm = document.getElementById("errorMsgId");
+			if (domElm) {
+				domElm.innerHTML = msg;
+			}
+		}
+
+		function forfeitGame() {
+			if (confirm('Are you sure you want to forfeit the game? You will lose this game.')) {
+
+				$.get("/board", {'request': 'forfeitGame'})
+				.done( function (data) {
+					if (data) {
+						console.log(data);
+						redirect("launch");
+						// if (bStatusTimer) {
+						// 	clearInterval(bStatusTimer);
+						// }
+					}
+				})
+				.fail (function (error) {
+					showErrorMessage(error);
+					console.log("Some error on server");
+				});
+
+			} else {
+				// Do nothing!
+			}
+		}
+
+
+		function redirect(pageName) {
+			var loc = window.location.href;
+			var index = loc.lastIndexOf("/");
+			var loc1 = loc.slice(0, index);
+			window.location.href = loc1 + "/" + pageName;
+		}
+
+		function createTable(num_rows, num_cols) {
+
+			// alert("coming here...");
+
+			let row = document.getElementById('block-row');
+
+			let colHTML = ``;
+
+			for (let i = 0; i < num_cols; i++) {
+				let col = `<div class="col-sm-1" style="padding: 0; margin:3px;" id="block-col` + (i+1) + `">`;
+
+				for (let j = 0; j < num_rows; j++) {
+					col = col + `<div id="` + (j+1) + `` + (i+1) + `" style="color:white; text-align: center; width:100%; background-color: DarkGray; margin-bottom:3px; height: 100px"
+					onclick="onCellClick(this)" >
+					<span id="cellDigits" style="font-size:xx-large">0</span>
+					</div>`;
+				}
+
+				col = col + `</div>`;
+				colHTML = colHTML + col;
+			}
+			row.innerHTML = colHTML;
+
+			// console.log(colHTML);
+		}
+
+		function onCellClick(elem) {
+
+			if (Timerinterval) {
+				clearInterval(Timerinterval);
+				Timerinterval = null;
+			}
+
+			$.post("/board", {'request': 'addMove', 'value': elem.id})
+				.done( function (data) {
+					if (data) {
+						console.log(data);
+						fillBoardWithData(data);
+						$('#block-row').off('click');
+						setTimeout(checkForTurn, 2000);
+					}
+				})
+				.fail (function (error) {
+					showErrorMessage(error);
+					console.log("Server Error: please check the input");
+				});
+		}
+
+		function checkForTurn() {
+			$.get("/board", {'request': 'isMyTurn'})
+				.done( function (data, status) {
+					console.log(data);
+					if (data == 1) {
+						$('#block-row').on('click');
+						fetchCurrentGame();
+						setTurnText("Your Move...");
+						if (!Timerinterval) {
+							startTurnTimer();
+						}
+					} else {
+						setTimeout(checkForTurn, 2000);
+						setTurnText("Wait for other player's move...");
+					}
+				})
+				.fail (function(data, status) {
+					console.log(data);
+				});
+		}
+
+		function startTurnTimer() {
+
+			if (Timerinterval) {
+				clearInterval(Timerinterval);
+				Timerinterval = null;
+			}
+
+			var sec = 15;
+			Timerinterval = setInterval(function() {
+				document.getElementById("timerId").innerHTML = "Make your move within: " + sec + " seconds";
+				sec--;
+				if (sec <= 0) {
+					checkForTurn();
+					if (Timerinterval) {
+						clearInterval(Timerinterval);
+						Timerinterval = null;
+					}
+				}
+			}, 1000 );
+		}
+
+		function setTurnText(msg) {
+			var domElm = document.getElementById("myTurnID");
+			if (domElm) {
+				domElm.innerHTML = msg;
+			}
+		}
+
+		function getCellIdText(cellID, boardData) {
+			if (boardData) {
+				var id = ""+cellID;
+				var values = boardData[cellID];
+				if (values && values.length == 2) {
+					return values[1];
+				}
+			}
+		}
+
+		function getCellIdUserIndex(cellID, boardData) {
+			if (boardData) {
+				var id = ""+cellID;
+				var values = boardData[cellID];
+				if (values && values.length == 2) {
+					return values[0];
+				}
+			}
+		}
+
+
+		function getUserColor(userIndex, colorData) {
+			if (colorData) {
+				for (var i = 0; i < colorData.length; i++) {
+					if (colorData[i].userIndex === userIndex) {
+						return colorData[i].color;
+					}
+				}
+			}
+
+			return 'DarkGray';
+		}
+
+		function setCellOwnerAndText(cellID, owner_color, text) {
+			let cell = document.getElementById(cellID);
+			if (cell) {
+				cell.style.backgroundColor = owner_color;
+				let textElem = cell.childNodes[1];
+				textElem.innerHTML = text;
+			}
+		}
+
+		function setUserListAndColors(userData) {
+
+			if (!userData) {
+				return;
+			}
+
+			var domElement = document.getElementById("usersTableId");
+			var usersInfo = '';
+			console.log(userData);
+
+			for (var i = 0; i < userData.length; i++) {
+				usersInfo = usersInfo + `<tr> <td>` + userData[i].userName + `</td><td style="float: left;width: 20px;
+  					height: 20px;margin: 5px; border: 1px solid rgba(0, 0, 0, .2); background: ` +
+					userData[i].color + `"></td><td>` + userData[i].points + `</td><td>` + userData[i].numMoves
+						+ `</td><td>` + userData[i].winner + `</td></tr>`;
+			}
+
+			domElement.innerHTML = usersInfo;
+
+		}
+
+		function getCellOwnerColor(cellID) {
+
+			let cell = document.getElementById(cellID);
+			if (cell) {
+				return cell.style.backgroundColor;
+			}
+
+		}
+
+		function getCellText(cellID) {
+
+			let cell = document.getElementById(cellID);
+			if (cell) {
+				// console.log(cell.childNodes);
+				let textElem = cell.childNodes[1];
+				return textElem.innerHTML;
+			}
+
+		}
+
+	</script>
+</html>

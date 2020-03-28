@@ -1,0 +1,137 @@
+
+
+<!doctype html>
+<html>
+<head>
+	<title>WELCOME</title>
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<style>
+		body { padding-top:80px; word-wrap:break-word; }
+	</style>
+</head>
+<body>
+<div class="container">
+
+	<div class="row">
+        <div style="float: right">
+            <a href="/profile" class="btn btn-info"><span class="glyphicon glyphicon-user"></span> <%= username %></a>
+            <a href="/logout" class="btn btn-danger"><span class="glyphicon glyphicon-off"></span> Logout</a>
+        </div>
+        <button class="btn btn-primary" type="button" onclick="refreshPage()">Refresh</button>
+        <div class="row">
+            <div class="col-sm-6">
+                <div class="input-group" style="margin-top: 20%">
+                    <input id="gameNameInputId" type="text" class="form-control" placeholder="Provide a name...">
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary" type="button" onclick="createNewGame()">Start New Game</button>
+                    </span>
+                </div>
+                <br>
+                <label style="margin-left: 40%"><strong>-- OR --</strong></label>
+                <br>
+                <div style="margin-top: 5%">
+                    <h4>Join Existing Game</h4>
+                    <div id="existingGamesList"></div>
+                </div>
+            </div>
+
+        </div>
+	</div>
+
+
+
+
+</div>
+</body>
+
+<script>
+
+    // get all existing games
+
+    $.get("/launch", {'request': 'isContinueGame'})
+        .done( function (data, status) {
+            if (data == true) {
+               redirect("board");
+            } else {
+                fetchExistingGames();
+            }
+
+        })
+        .fail (function(data, status) {
+            console.log(data);
+            console.log(status);
+        });
+
+
+    function refreshPage() {
+        fetchExistingGames();
+    }
+
+    function fetchExistingGames() {
+
+        $.get("/launch", {'request': 'ExistingGames'})
+            .done( function (data, status) {
+                console.log(data);
+                console.log(status);
+                if (data) {
+                    var dom = document.getElementById("existingGamesList");
+                    var gamesList = ``;
+                    for (var i = 0; i < data.length; i++) {
+                        gamesList = gamesList + `<div><a style="cursor: pointer" onclick="onSelectGame(this)">`+data[i].board_name +`</a></div>`;
+                    }
+                    dom.innerHTML = gamesList;
+                }
+
+            })
+            .fail (function(data, status) {
+                console.log(data);
+                console.log(status);
+            });
+    }
+
+    function onSelectGame(data) {
+        console.log(data.innerHTML);
+
+        $.get("/launch", {'request': 'JoinExistingGame', 'gameTitle': data.innerHTML})
+            .done( function (data, status) {
+                console.log(data);
+                redirect("board");
+            })
+            .fail (function(data, status) {
+                console.log(data);
+            });
+
+    }
+
+    function createNewGame() {
+
+        var inpElement = document.getElementById("gameNameInputId");
+        if (inpElement) {
+            var gameName = inpElement.value;
+            if (gameName) {
+                $.post("/launch", {'request': 'CreateNewGame', 'gameTitle': gameName})
+                    .done( function (data) {
+                        console.log(data);
+                        redirect("board");
+                    })
+                    .fail (function(data, status) {
+                        console.log(data);
+                    });
+            }
+        }
+
+    }
+
+    function redirect(pageName) {
+			var loc = window.location.href;
+			var index = loc.lastIndexOf("/");
+            var loc1 = loc.slice(0, index);
+            console.log(loc1);
+			window.location.href = loc1 + "/" + pageName;
+		}
+
+</script>
+
+</html>

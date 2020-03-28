@@ -1,0 +1,121 @@
+<!-- views/profile.ejs -->
+<!doctype html>
+<html>
+<head>
+		<title>Profile</title>
+		<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+		<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<style>
+			body { padding-top:80px; word-wrap:break-word; }
+		</style>
+</head>
+<body>
+<div class="container">
+
+	<div class="row">
+		<div style="float: right">
+			<a href="/profile" class="btn btn-info"><span class="glyphicon glyphicon-user"></span> <%= username %></a>
+			<a href="/logout" class="btn btn-danger"><span class="glyphicon glyphicon-off"></span> Logout</a>
+		</div>
+		<a href="/launch" class="btn btn-success"> Home</a>
+	</div>
+
+	<div class="row">
+		<div class="col-md-8">
+			<table class="table table-striped" style="cursor: pointer">
+				<thead>
+				<tr>
+					<th>User</th>
+					<th>Title</th>
+					<th>Start Time</th>
+					<th>End Time</th>
+					<th>Forfeited?</th>
+					<th>Winner</th>
+				</tr>
+				</thead>
+				<tbody id="gamesListTableId">
+				</tbody>
+			</table>
+		</div>
+
+		<div class="col-md-4">
+			<h4 id="gameTitleid" ></h4>
+			<table class="table table-bordered">
+				<thead>
+				<tr>
+					<th>UserName</th>
+					<th>Move Row</th>
+					<th>Move Col</th>
+				</tr>
+				</thead>
+				<tbody id="gameMovesList">
+				</tbody>
+			</table>
+		</div>
+
+	</div>
+
+</div>
+
+<script>
+
+	var gameData = null;
+
+	$.get("/profile", {'request': 'userGamesHistory'})
+        .done( function (data, status) {
+            if (data) {
+				gameData = data;
+				displayGamesData(gameData);
+				if (gameData.length > 0) {
+					onShowMoves(0);
+				}
+            }
+        })
+        .fail (function(data, status) {
+            console.log(data);
+            console.log(status);
+		});
+
+
+	function displayGamesData(data) {
+
+		var content = '';
+		for (var i = 0; i < data.length; i++) {
+			content = content + `<tr onclick="onShowMoves(`+ i + `)" ><td>` + data[i].user + `</td><td>`+ data[i].boardName + `</td><td>` +
+				data[i].start + `</td><td>` +  data[i].end +`</td><td>` + data[i].forfeited +  `</td><td>` + data[i].winner + `</td></tr>`;
+		}
+
+
+		document.getElementById("gamesListTableId").innerHTML = content;
+
+	}
+
+	function onShowMoves(index) {
+
+		document.getElementById("gameTitleid").innerHTML = gameData[index].boardName;
+
+		var content = '';
+		for (var i = 0; i < gameData[index].moveSeq.length; i++) {
+
+			if (gameData[index].moveSeq[i].moveCellId != "Timeout" && gameData[index].moveSeq[i].moveCellId != "forfeited") {
+				content = content + `<tr><td>` + gameData[index].moveSeq[i].userName + `</td><td>`+
+					gameData[index].moveSeq[i].moveCellId.charAt(0) + `</td><td>`+
+						gameData[index].moveSeq[i].moveCellId.charAt(1) + `</td></tr>`;
+			} else {
+				content = content + `<tr><td>` + gameData[index].moveSeq[i].userName + `</td><td>`+
+					gameData[index].moveSeq[i].moveCellId + `</td><td></td></tr>`;
+			}
+		}
+
+		document.getElementById("gameMovesList").innerHTML = content;
+
+	}
+
+
+
+
+</script>
+
+</body>
+</html>
