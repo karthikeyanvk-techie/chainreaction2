@@ -1,9 +1,9 @@
 // config/database.js
 module.exports = {
     'connection': {
-        'host': 'localhost',
-        'user': 'root',
-        'password': 'P@55word'
+        'host': 'us-cdbr-iron-east-01.cleardb.net',
+        'user': 'bed48ed96f68fa',
+        'password': '400c3d76'
     },
-	'database': 'CHAIN_REACTION'
+	'database': 'heroku_22ea474ecffaaae'
 };
